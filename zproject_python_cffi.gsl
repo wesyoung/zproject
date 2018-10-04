@@ -4,7 +4,7 @@
 #   of FFI function bindings on which to base idiomatic Python classes.
 #
 #   This is a code generator built using the iMatix GSL code generation
-#   language. See https://github.com/imatix/gsl for details.
+#   language. See https://github.com/zeromq/gsl for details.
 #
 #   Copyright (c) the Contributors as noted in the AUTHORS file.
 #   This file is part of zproject.
@@ -134,7 +134,6 @@ function python_c_method_call (class, method)
     if  (count (my.method.argument)) = 2 \
        & !my.method.singleton \
        & count (my.method.argument, argument.c_type?="zlist_t **")
-            echo "$(my.method.c_name): $(argument.c_type?"")"
             my.out += "foo = utils.to_strings (argv_p)\n"
             my.out += "        if foo is not None:\n"
             my.out += "            foo_p = utils.ffi.new(\"struct _zlist_t *[1]\")\n"
@@ -214,6 +213,14 @@ function generate_binding
     >$(project.GENERATED_WARNING_HEADER:)
     >from . import utils
     for class where defined (class.api) & class.private = "0"
+        for constant
+    >$(NAME:c) = $(value)\
+            if defined (constant.description)
+                > # $(constant.description)
+            else
+                >
+            endif
+        endfor
     >from .$(class.python_name:) import *
     endfor
 

@@ -2,7 +2,7 @@
 #   zproject
 #
 #   This is a code generator built using the iMatix GSL code generation
-#   language. See https://github.com/imatix/gsl for details.
+#   language. See https://github.com/zeromq/gsl for details.
 #
 #   Copyright (c) the Contributors as noted in the AUTHORS file.
 #   This file is part of zproject.
@@ -77,6 +77,14 @@ function resolve_classfilename_option()
             endif
         endif
 
+        if defined (classfilename.pkgincludedir)
+            if classfilename.pkgincludedir ?= "true"
+                project.pkgincludedir = 1
+            elsif classfilename.pkgincludedir ?= "false"
+                project.pkgincludedir = 0
+            endif
+        endif
+
         return
     endfor
 endfunction
@@ -86,6 +94,7 @@ project.header_ext = "h"
 project.source_ext = "c"
 project.use_cxx = project_use_cxx ()
 project.keep_tree = 0
+project.pkgincludedir = 0
 resolve_classfilename_option()
 project.name ?= "myproject"
 project.prefix ?= "$(project.name:c)"
@@ -110,6 +119,8 @@ endif
 project->license. ?= "Copyright (c) the Authors"
 
 project.has_main = (count (main) > 0)
+project.has_bin = (count (bin) > 0)
+project.has_classes = (count (class) > 0)
 project.exports_classes = (count (class, !defined (class.private)) > 0)
 project.generated_warning_header ?= "\
 ################################################################################

@@ -1,7 +1,7 @@
 #   Generate .gitignore for project (one time only)
 #
 #   This is a code generator built using the iMatix GSL code generation
-#   language. See https://github.com/imatix/gsl for details.
+#   language. See https://github.com/zeromq/gsl for details.
 #
 #   Copyright (c) the Contributors as noted in the AUTHORS file.
 #   This file is part of zproject.
@@ -45,10 +45,10 @@ if !file.exists (".gitignore")
     >*.app
     >core
     >
-    > # Distcheck workspace and archives
-    >$(project.name)-$(->version.major).$(->version.minor).$(->version.patch)/
-    >$(project.name)-$(->version.major).$(->version.minor).$(->version.patch).tar.gz
-    >$(project.name)-$(->version.major).$(->version.minor).$(->version.patch).zip
+    ># Distcheck workspace and archives
+    >$(project.name)-*/
+    >$(project.name)-*.tar.gz
+    >$(project.name)-*.zip
     >
     ># Man pages
     >doc/*.1
@@ -89,12 +89,7 @@ if !file.exists (".gitignore")
     >Testing/
     >
     ># Repositories downloaded by CI integration scripts
-.   for use where defined (use.repository) & ! defined (use.tarball)
-    >$(use.project)/
-.   endfor
-.   for use where defined (use.tarball)
-    >\$(basename "$(use.tarball)" .tar.gz)/
-.   endfor
+    >tmp-deps/
     >
     ># Travis build area
     >tmp/
@@ -123,7 +118,7 @@ if !file.exists (".gitignore")
     >src/app/obj/
     >src/app/local.properties
     >
-    ># Android -dependencies
+    ># Android - dependencies
     >src/app/jni/output
     >
     ># Python build directory
@@ -144,6 +139,9 @@ if !file.exists (".gitignore")
     >*.swp
     >*.bak
     >.test*
+    >
+    ># Netbeans directory
+    >nbproject/
     >
     ># editor backups
     >*~

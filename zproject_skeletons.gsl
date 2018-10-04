@@ -1,7 +1,7 @@
 #   Generate skeletons for classes, actors, and mains
 #
 #   This is a code generator built using the iMatix GSL code generation
-#   language. See https://github.com/imatix/gsl for details.
+#   language. See https://github.com/zeromq/gsl for details.
 #
 #   Copyright (c) the Contributors as noted in the AUTHORS file.
 #   This file is part of zproject.
@@ -355,7 +355,7 @@ extern "C" {
 
 .   if class.c_name = project.name
 //  Include the library file with typdefs, public includes and public constants
-#include "$(class.c_name)_library.$(project.headerext)"
+#include "$(class.name)_library.$(project.headerext)"
 
 .   endif
 //  @interface

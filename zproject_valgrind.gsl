@@ -1,7 +1,7 @@
 #   Generate valgrind suppression file
 #
 #   This is a code generator built using the iMatix GSL code generation
-#   language. See https://github.com/imatix/gsl for details.
+#   language. See https://github.com/zeromq/gsl for details.
 #
 #   Copyright (c) the Contributors as noted in the AUTHORS file.
 #   This file is part of zproject.
@@ -53,6 +53,16 @@ if !file.exists ("src/.valgrind.supp")
     >   fun:_gcry_mpi_init
     >   fun:global_init
     >   ...
+    >}
+    >{
+    >    <libgcrypt_init2>
+    >    Memcheck:Leak
+    >    match-leak-kinds: reachable
+    >    fun:malloc
+    >    ...
+    >    fun:call_init.part.0
+    >    fun:_dl_init
+    >    ...
     >}
 else
     echo "NOT regenerating an existing src/.valgrind.supp file; you might want to move yours out of the way and re-generate the project again to get updated settings"

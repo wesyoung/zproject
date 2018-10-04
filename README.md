@@ -101,10 +101,10 @@ the book is still work in progress!
 
 zproject uses the universal code generator called GSL to process its XML inputs
 and create its outputs. Before you start you'll need to install GSL
-(https://github.com/imatix/gsl) on your system.
+(https://github.com/zeromq/gsl) on your system.
 
 ```sh
-git clone https://github.com/imatix/gsl.git
+git clone https://github.com/zeromq/gsl.git
 cd gsl/src
 make
 make install
@@ -211,6 +211,7 @@ zproject's `project.xml` contains an extensive description of the available conf
     description := A short description for your project (optional)
     email := The email address where to reach you (optional)
     repository := git repository holding project (optional)
+    unique_class_name := "0"|"1" (optional, defaults to 0) As a failsafe, forbid naming agents or classes same as the project itself (can cause conflicts in generated header filenames). Disable explicitly (set to 0) only in legacy projects that can not regenerate otherwise, and try to fix those.
 -->
 <project script = "zproject.gsl" name = "zproject"
     email = "zeromq-dev@lists.zeromq.org"
@@ -220,7 +221,10 @@ zproject's `project.xml` contains an extensive description of the available conf
 
     <!--
         Includes are processed first, so XML in included files will be
-        part of the XML tree
+        part of the XML tree. This file can provide content of such tags
+        as <license> (detailed text to put in generated file headers)
+        and <starting_year> (a number to put in packaging copyright
+        summaries).
     -->
     <include filename = "license.xml" />
 
@@ -412,6 +416,14 @@ zproject's `project.xml` contains an extensive description of the available conf
          the workspace configured with docs, so you can forward it to the
          publishing helper job and avoid rebuilding manpages for packaging.
 
+         Similarly, a test_check_clang_format requires an external tool,
+         the clang-format-5.0 (or newer) to process the codebase and decide
+         if it is stylish. By default the test is enabled but not required
+         to pass (is just informative) and will run if the tool is available
+         in the build system. Eventually, a project should define and uphold
+         its coding style -- then this test can become one of requirements
+         for new pull requests.
+
          The triggers_pollSCM option sets up the pipeline-generated job
          for regular polling of the original SCM repository, using the
          Jenkins cron syntax. The default is approximately every 5 minutes
@@ -419,11 +431,26 @@ zproject's `project.xml` contains an extensive description of the available conf
          empty string disables polling, so you'd only run the job manually.
          Note that the most frequent working setting is "H/2", NOT a "H/1".
 
+         On the Jenkins setup used by generated projects, sometimes it was
+         re-scheduling the same commits over and over and even overlapping.
+         Usually this was linked to some lagginess of the build system or
+         its internet connection, but the result was a growing queue of
+         same (and redundant) builds. To remedy this, projects can set a
+         few experimental options now (and regenerate their Jenkinsfile):
+         * use_earlymilestone -- uses a milestone to cancel builds that
+            got to it later than the running one
+         * use_build_nonconcurrent -- sets a disableConcurrentBuilds option
+         * use_checkout_explicit -- sets a skipDefaultCheckout option and
+            defines a step to check out code explicitly; it is believed
+            this may better succeed in recording which commits are already
+            being processed by the server
+
          The use_test_timeout option sets up the default timeout for test
          steps (further configurable at run-time as a build argument).
          Generally unit tests should not take pathologically long, so the
-         default of 10 minutes should commonly suffice even for distchecks.
-         If your selftests are known to take a lot of time, set this option.
+         default of 30 minutes should commonly suffice even for distchecks.
+         If your selftests are known to take a lot of time, perhaps due to
+         using an occasionally overloaded Jenkins CI farm, set this option.
 
          A use_test_retry option allows to retry each failing test step
          for the specified amount of attempts; it is deemed good if the
@@ -440,6 +467,21 @@ zproject's `project.xml` contains an extensive description of the available conf
          should not. If this bites you, set use_deleteDir_rm_first=1 in
          the project, so the OS native "rm" is tried first.
 
+         The two options do_cleanup_after_build (for parallelized tests)
+         and do_cleanup_after_job control whether the pipeline would by
+         default remove the build/test subdirectory after successful end
+         of stage, and/or cleans the build workspace after the whole job
+         succeeded, respectively. If not set, cleanup is enabled for both
+         and in either case the active options are among build parameters.
+         In opposite fashion, a do_cleanup_after_failed_build is disabled
+         by default to allow post-mortem inspection of errors on CI server.
+         You might want to keep the built sources to analyze the behavior
+         of your build recipes in a particular environment, thought at a
+         risk of using excessive disk space there. In case of failure the
+         workspace remains on disk to make an in-place analysis possible,
+         and would eat space until you clean it up manually or it would
+         expire according to your Jenkins old-build retention policies.
+
     <target name = "jenkins">
         <option name = "file" value = "Jenkinsfile" />
         <option name = "agent_docker" value = "zeromqorg/czmq" />
@@ -453,7 +495,7 @@ zproject's `project.xml` contains an extensive description of the available conf
         <option name = "dist_docs" value = "1" />
         <option name = "require_gitignore" value = "0" />
         <option name = "use_deleteDir_rm_first" value = "1" />
-        <option name = "use_test_timeout" value = "30" />
+        <option name = "use_test_timeout" value = "60" />
         <option name = "use_test_retry" value = "3" />
         <option name = "test_check" value = "0" />
         <option name = "test_memcheck" value = "0" />
@@ -461,6 +503,9 @@ zproject's `project.xml` contains an extensive description of the available conf
         <option name = "test_install" value = "0" />
         <option name = "test_install_DESTDIR" value = "/tmp/proto-area" />
         <option name = "test_cppcheck" value = "1" />
+        <option name = "test_check_clang_format" value = "1" />
+        <option name = "use_clang_format_prog" value = "clang-format-5.0" />
+        <option name = "require_good_clang_format" value = "0" />
     </target>
     -->
     <target name = "jenkins" >
@@ -736,14 +781,15 @@ Model is described in `zproject_known_projects.xml` file:
 
 Exemple:
 ```classfilename
-<classfilename use-cxx = "true" keep-tree = "true" pretty-print = "no" source-extension = "cpp" header-extension = "hpp" />
+<classfilename use-cxx = "true" pkgincludedir = "false" keep-tree = "true" pretty-print = "no" source-extension = "cpp" header-extension = "hpp" />
 ```
 
 * use-cxx will force usage (or not) of c++.
-* keep-tree will keeping the include tree on the install, must be used with a conservative name format (ex: pretty-print = "no"). Currently only supported with autotool.
-* pretty-print define the type of class name format change in order to generate the filename. It use the pretty-print option of gsl (see Substituting Symbols and Expressions on https://github.com/imatix/gsl#expressions for more information).
+* keep-tree will keep the include tree structure on the install (as opposed to flat delivery of include files basenames into the single-level target directory), must be used with a conservative name format (ex: pretty-print = "no"). Currently only supported with autotool.
+* pkgincludedir option chooses whether headers of this project should be dumped into the common system includedir (legacy default), or into an includedir/projname subdirectory?. Currently only supported with autotool.
+* pretty-print define the type of class name format change in order to generate the filename. It uses the pretty-print option of gsl (see Substituting Symbols and Expressions on https://github.com/zeromq/gsl#expressions for more information).
 * source-extension define the filename extension for source files in this project.
-* header-extension define the filename extension for source files in this project.
+* header-extension define the filename extension for header files in this project.
 
 Default value :
 * pretty-print : substitute_non_alpha_to_make_c_identifier (c option)

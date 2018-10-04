@@ -1,7 +1,7 @@
 #   Process class API files in api/*.api
 #
 #   This is a code generator built using the iMatix GSL code generation
-#   language. See https://github.com/imatix/gsl for details.
+#   language. See https://github.com/zeromq/gsl for details.
 #
 #   Copyright (c) the Contributors as noted in the AUTHORS file.
 #   This file is part of zproject.
@@ -41,6 +41,8 @@ if python_cffi ?= 1
     for project.use
         if file.exists ("../$(use.project:c)/api/python_cffi.slurp")
             use.python_cffi_slurp = "../$(use.project:c)/api/python_cffi.slurp"
+        elsif file.exists ("tmp-deps/$(use.project:c)/api/python_cffi.slurp")
+            use.python_cffi_slurp = "tmp-deps/$(use.project:c)/api/python_cffi.slurp"
         elsif file.exists ("/usr/local/share/zproject/$(use.project:c)/python_cffi.slurp")
             use.python_cffi_slurp = "/usr/local/share/zproject/$(use.project:c)/python_cffi.slurp"
         elsif file.exists ("/usr/share/zproject/$(use.project:c)/python_cffi.slurp")
@@ -77,6 +79,15 @@ function set_state (element, default)
     |  my.element.state = "deprecated" \
     |  my.element.private ?= 1
         my.element.draft = 0
+    elsif my.element.stable ?= 0 | my.element.stable ?= 1
+        echo "LEGACY HACK WARNING: Usage of 'stable' boolean attribute in $(name (my.element)) is deprecated, please choose a 'state' instead"
+        if my.element.stable ?= 0
+            my.element.draft = 1
+            my.element.state = "draft"
+        else
+            my.element.draft = 0
+            my.element.state = "stable"
+        endif
     elsif my.element.state = "draft"
         my.element.draft = 1
     else
@@ -305,7 +316,7 @@ endfunction
 #   semantic or C-specific attributes of the method itself.
 #
 function resolve_c_class (class)
-    my.class.c_name ?= "$(my.class.name:$(project.filename_prettyprint))"
+    my.class.c_name ?= "$(my.class.name:c)"
     my.class.description ?= "$(string.trim (my.class.?""):left)"
     if !defined (my.class.selftest)
         my.class.selftest ?= 1
@@ -645,7 +656,7 @@ for project.class
     else
         # If there is no API model for this class,
         # all we can do is resolve the name and state
-        class.c_name = "$(class.name:$(project.filename_prettyprint))"
+        class.c_name = "$(class.name:c)"
         set_state (class, "draft")
     endif
 endfor

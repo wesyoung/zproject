@@ -11,7 +11,7 @@ file(GLOB_RECURSE ALL_SOURCE_FILES
      ${CMAKE_SOURCE_DIR}/perf/*.h ${CMAKE_SOURCE_DIR}/perf/*.hpp
      ${CMAKE_SOURCE_DIR}/tools/*.c ${CMAKE_SOURCE_DIR}/tools/*.cc ${CMAKE_SOURCE_DIR}/tools/*.cpp
      ${CMAKE_SOURCE_DIR}/tools/*.h ${CMAKE_SOURCE_DIR}/tools/*.hpp
-     ${CMAKE_SOURCE_DIR}/include/*.h
+     ${CMAKE_SOURCE_DIR}/include/*.h ${CMAKE_SOURCE_DIR}/include/*.hpp
     )
 
 if("${CLANG_FORMAT}" STREQUAL "")
@@ -34,6 +34,13 @@ add_custom_target(
         clang-format-check
         COMMAND chmod +x clang-format-check.sh
         COMMAND ./clang-format-check.sh
+        COMMENT "Checking correct formatting according to .clang-format file using ${CLANG_FORMAT}"
+)
+
+add_custom_target(
+        clang-format-check-CI
+        COMMAND chmod +x clang-format-check.sh
+        COMMAND ./clang-format-check.sh --CI
         COMMENT "Checking correct formatting according to .clang-format file using ${CLANG_FORMAT}"
 )
 
