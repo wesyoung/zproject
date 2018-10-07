@@ -30,3 +30,13 @@
    fun:_GLOBAL__sub_I_eh_alloc.cc
    ...
 }
+{
+   <libgcrypt_init>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:_gcry_mpi_init
+   fun:global_init
+   ...
+}
